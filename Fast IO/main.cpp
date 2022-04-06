@@ -7,6 +7,7 @@
 #include <benchmark/benchmark.h>
 
 #include "ScopedTimer.h"
+#include "numeric_types.h"
 
 //Prompt:
 /**
@@ -19,7 +20,7 @@
 
 //Note what they maybe mean by stdin is to calculate it per input as we grow the list
 
-template <typename T>
+template <typename T, typename = numeric_t<T>>
 struct Node
 {
 	T key;
@@ -40,7 +41,7 @@ struct Node
 	}
 };
 
-template<typename T>
+template<typename T, typename = numeric_t<T>>
 class SkipList
 {
 private:
@@ -136,6 +137,45 @@ public:
 		}
 	}
 
+	void remove(T key)
+	{
+		Node<T>* current = header_;
+
+		Node<T>* update[max_lvl_ + 1];
+		memset(update, 0, sizeof(Node<T>*) * (max_lvl_ + 1));
+
+		for (int i = level_; i >= 0; i--)
+		{
+			while(current->forward[i] != nullptr && current->forward[i]->key < key)
+			{
+				current = current->forward[i];
+			}
+
+			update[i] = current;
+		}
+
+		current = current->forward[0];
+
+		if (current != nullptr && current->key == key)
+		{
+			for (int i = 0; i <= level_; i++)
+			{
+				if (update[i]->forward[i] != current)
+				{
+					break;
+				}
+
+				update[i]->forward[i] = current->forward[i];
+			}
+
+			//Remove levels having no elements
+			while (level_ > 0 && header_->forward[level_] == 0)
+			{
+				level_--;
+			}
+		}
+	}
+
 	void display_list()
 	{
 		for (int i = 0; i <= level_; i++)
@@ -153,13 +193,33 @@ public:
 		}
 	}
 
+	void find(T key)
+	{
+		Node<T>* current = header_;
+
+		for (int i = level_; i >= 0; i--)
+		{
+			while (current->forward[i] && current->forward[i]->key < key)
+			{
+				current = current->forward[i];
+			}
+		}
+
+		current = current->forward[0];
+
+		if (current && current->key == key)
+		{
+			std::cout << "Found: " << key << '\n';
+		}
+	}
+
 	size_t size() const
 	{
 		return sz_;
 	}
 };
 
-template<typename T>
+template<typename T, typename = numeric_t<T>>
 static std::vector<T> generate_sample_data(const int sz)
 {
 	ScopedTimer<std::chrono::milliseconds> st;

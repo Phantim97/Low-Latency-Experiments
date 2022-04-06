@@ -14,7 +14,7 @@ find_package(OpenMP)
 
 include_directories(${CMAKE_SOURCE_DIR}/ScopedTimer)
 
-add_executable("FIO" "main.cpp" "goal.c" "goal.h")
+add_executable("FIO" "main.cpp" "goal.c" "goal.h" "numeric_types.h")
 
 if(OpenMP_CXX_FOUND)
     target_link_libraries("FIO" PUBLIC OpenMP::OpenMP_CXX)
