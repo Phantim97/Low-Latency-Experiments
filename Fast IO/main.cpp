@@ -26,7 +26,7 @@ struct Node
 
 	//Array to hold pointers
 	Node<T>** forward;
-	Node(int key, const int level)
+	Node(T key, const int level)
 	{
 		this->key = key;
 		forward = new Node<T>*[level + 1];
@@ -48,20 +48,21 @@ private:
 	float p_; //fraction of nodes with level i pointers having level i+1 pointers
 	Node<T>* header_ = nullptr;
 	int level_;
-	int sz_;
+	int sz_ = 0;
 
 	int random_level() const
 	{
 		//rand engine
-		const std::uniform_real_distribution<double> unif(0, max_lvl_);
-		std::default_random_engine re;
-		double r = unif(re);
+		std::random_device rd;
+		const std::uniform_real_distribution<T> unif(0, RAND_MAX);
+		std::default_random_engine re(rd());
+		double r = unif(re) / RAND_MAX;
 		int lvl = 0;
 
 		while (r < p_ && lvl < max_lvl_)
 		{
 			lvl++;
-			r = unif(re);
+			r = unif(re) / RAND_MAX;
 		}
 
 		return lvl;
@@ -88,7 +89,7 @@ public:
 		return n;
 	}
 
-	void insert_element(T key)
+	void insert(T key)
 	{
 		Node<T>* current = header_;
 
@@ -111,7 +112,7 @@ public:
 
 		if (current == nullptr || current->key != key)
 		{
-			int rlevel = random_level();
+			const int rlevel = random_level();
 
 			if (rlevel > level_)
 			{
@@ -158,21 +159,25 @@ public:
 	}
 };
 
-static void generate_sample_data(const int sz)
+template<typename T>
+static std::vector<T> generate_sample_data(const int sz)
 {
 	ScopedTimer<std::chrono::milliseconds> st;
-	std::vector<double> a(sz);
+	std::vector<T> a(sz);
 
 	constexpr double lower_bound = 0;
 	constexpr double upper_bound = 10000;
-	const std::uniform_real_distribution<double> unif(lower_bound, upper_bound);
-	std::default_random_engine re;
+	std::random_device rd;
+	const std::uniform_real_distribution<T> unif(lower_bound, upper_bound);
+	std::default_random_engine re(rd());
 
 	#pragma omp parallel for (shared:a)
 	for (int i = 0; i < a.size(); i++)
 	{
 		a[i] = unif(re);
 	}
+
+	return a;
 }
 
 //TODO:
@@ -184,17 +189,16 @@ static void generate_sample_data(const int sz)
 
 int main()
 {
-//	generate_sample_data(128000000);
+	const std::vector<double> data = generate_sample_data<double>(30);
 	SkipList<double> sl(3, 0.5);
-	sl.insert_element(3);
-	sl.insert_element(6);
-	sl.insert_element(9);
-	sl.insert_element(17);
-	sl.insert_element(12);
-	sl.insert_element(15);
-	sl.insert_element(21);
-	sl.insert_element(19);
+
+	for (int i = 0; i < data.size(); i++)
+	{
+		sl.insert(data[i]);
+	}
+
 	sl.display_list();
+	std::cout << "Size: " << sl.size() << '\n';
 
 	return 0;
 }
