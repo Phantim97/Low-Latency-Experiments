@@ -26,16 +26,20 @@ struct Node
 
 	//Array to hold pointers
 	Node<T>** forward;
-	Node(int key, int level)
+	Node(int key, const int level)
 	{
 		this->key = key;
 		forward = new Node<T>*[level + 1];
 
 		memset(forward, 0, sizeof(Node<T>*) * (level + 1));
 	}
+
+	~Node()
+	{
+		delete[] forward;
+	}
 };
 
-//O(sqrt N)
 template<typename T>
 class SkipList
 {
@@ -44,23 +48,9 @@ private:
 	float p_; //fraction of nodes with level i pointers having level i+1 pointers
 	Node<T>* header_ = nullptr;
 	int level_;
+	int sz_;
 
-public:
-	SkipList(int max_lvl, float p)
-	{
-		this->max_lvl_ = max_lvl;
-		this->p_ = p;
-		this->level_ = 0;
-
-		this->header_ = new Node<T>(-1, max_lvl);
-	}
-
-	~SkipList()
-	{
-		//TODO: iteratively delete whole skip list
-	};
-
-	int random_level()
+	int random_level() const
 	{
 		//rand engine
 		const std::uniform_real_distribution<double> unif(0, max_lvl_);
@@ -75,7 +65,21 @@ public:
 		}
 
 		return lvl;
+	}
 
+public:
+	SkipList(int max_lvl, float p)
+	{
+		this->max_lvl_ = max_lvl;
+		this->p_ = p;
+		this->level_ = 0;
+
+		this->header_ = new Node<T>(-1, max_lvl);
+	}
+
+	~SkipList()
+	{
+		delete header_;
 	}
 
 	Node<T>* create_node(T key, int level)
@@ -92,19 +96,20 @@ public:
 		Node<T>* update[max_lvl_ + 1];
 		memset(update, 0, sizeof(Node<T>*) * (max_lvl_ + 1));
 
-		for (int i = level; i >= 0; i--)
+		for (int i = level_; i >= 0; i--)
 		{
-			while (current->forward[i] != NULL && current->forward[i]->key < key)
+			while (current->forward[i] != nullptr && current->forward[i]->key < key)
 			{
 				current = current->forward[i];
-				update[i] = current;
 			}
+
+			update[i] = current;
 		}
 
 		//Reached level 0 and forward pointer to right which is desired position to insert key
 		current = current->forward[0];
 
-		if (current == NULL || current->key != key)
+		if (current == nullptr || current->key != key)
 		{
 			int rlevel = random_level();
 
@@ -119,6 +124,7 @@ public:
 			}
 
 			Node<T>* n = create_node(key, rlevel);
+			sz_++;
 
 			//Insert node by rearranging pointers
 			for (int i = 0; i <= rlevel; i++)
@@ -144,6 +150,11 @@ public:
 
 			std::cout << '\n';
 		}
+	}
+
+	size_t size() const
+	{
+		return sz_;
 	}
 };
 
@@ -175,17 +186,14 @@ int main()
 {
 //	generate_sample_data(128000000);
 	SkipList<double> sl(3, 0.5);
-
 	sl.insert_element(3);
-	sl.insert_element(3);
-	sl.insert_element(3);
-	sl.insert_element(3);
-	sl.insert_element(3);
-	sl.insert_element(19);
+	sl.insert_element(6);
+	sl.insert_element(9);
 	sl.insert_element(17);
-	sl.insert_element(26);
+	sl.insert_element(12);
+	sl.insert_element(15);
 	sl.insert_element(21);
-	sl.insert_element(25);
+	sl.insert_element(19);
 	sl.display_list();
 
 	return 0;
