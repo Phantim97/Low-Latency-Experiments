@@ -1,7 +1,6 @@
 #include <memory>
 
 #include "ScopedTimer.h"
-#include "goal.h"
 
 //Prompt:
 /**
@@ -16,14 +15,9 @@
  * \return
  */
 
-void test_bench()
-{
-	ScopedTimer<std::chrono::milliseconds>();
-	bench_main();
-}
+//TODO: Dynamic Programming probably
 
 int main()
 {
-	test_bench();
 	return 0;
 }

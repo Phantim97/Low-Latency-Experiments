@@ -20,6 +20,8 @@
 
 //Note what they maybe mean by stdin is to calculate it per input as we grow the list
 
+//TODO: Implement indexed version of skip list
+
 template <typename T, typename = numeric_t<T>>
 struct Node
 {
