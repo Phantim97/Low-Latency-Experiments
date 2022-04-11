@@ -1,6 +1,6 @@
 #include <fstream>
 #include <memory>
-#include <array>
+#include <vector>
 #include <random>
 #include <omp.h>
 
@@ -24,9 +24,8 @@ template <typename T, typename = numeric_t<T>>
 struct Node
 {
 	T key;
+	Node<T>** forward; //Array to hold pointers
 
-	//Array to hold pointers
-	Node<T>** forward;
 	Node(T key, const int level)
 	{
 		this->key = key;
@@ -39,6 +38,12 @@ struct Node
 	{
 		delete[] forward;
 	}
+};
+
+static enum class Scale
+{
+	larger_than,
+	smaller_than,
 };
 
 template<typename T, typename = numeric_t<T>>
@@ -75,7 +80,6 @@ public:
 		this->max_lvl_ = max_lvl;
 		this->p_ = p;
 		this->level_ = 0;
-
 		this->header_ = new Node<T>(-1, max_lvl);
 	}
 
@@ -193,6 +197,23 @@ public:
 		}
 	}
 
+	T percentile_find(Scale s, double percent)
+	{
+		percent = sz_ * percent;
+
+		if (percent < 0 || percent > sz)
+		{
+			return DBL_MIN;
+		}
+
+		Node<T>* current = header_;
+		int pos = 0;
+		int tmp = 0;
+
+
+		return curr->value;
+	}
+
 	void find(T key)
 	{
 		Node<T>* current = header_;
@@ -260,5 +281,7 @@ int main()
 	sl.display_list();
 	std::cout << "Size: " << sl.size() << '\n';
 
+	std::cout << "Result: " << sl.percentile_find(Scale::larger_than, .95) << '\n';
+		 
 	return 0;
 }
