@@ -10,7 +10,7 @@ find_package(OpenMP)
 
 include_directories(${CMAKE_SOURCE_DIR}/ScopedTimer)
 
-add_executable("Tiles" "main.cpp"  "goal.h")
+add_executable("Tiles" "main.cpp")
 
 if(OpenMP_CXX_FOUND)
     target_link_libraries("Tiles" PUBLIC OpenMP::OpenMP_CXX)
