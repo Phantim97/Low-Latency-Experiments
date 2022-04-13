@@ -270,20 +270,117 @@ static std::vector<T> generate_sample_data(const int sz)
 -Implement a skip list
 */
 
-int main()
-{
-	const std::vector<double> data = generate_sample_data<double>(30);
-	SkipList<double> sl(3, 0.5);
+#include <iostream>
+#include <vector>
+#include <cassert>
+#include <queue>
+#include <limits>
 
-	for (int i = 0; i < data.size(); i++)
+//SFINAE out all non numeric types for this class
+template <typename T, typename = numeric_t<T>>
+class MinMaxHeap
+{
+private:
+	
+	std::priority_queue<T, std::vector<T>, std::greater<>> min_heap_; //All elements above percentile go here
+	std::priority_queue<T> max_heap_; //All elements below percentile go here
+	double percentile_ = 0;
+public:
+	MinMaxHeap(const double percentile) : percentile_(percentile)
 	{
-		sl.insert(data[i]);
 	}
 
-	sl.display_list();
-	std::cout << "Size: " << sl.size() << '\n';
+	void insert(T val)
+	{
+		min_heap_.push(val);
+		const double total = min_heap_.size() + max_heap_.size();
+		const double ratio = max_heap_.size() / total;
 
-	std::cout << "Result: " << sl.percentile_find(Scale::larger_than, .95) << '\n';
-		 
+		//If ratio is less than percentile we move it out of the min heap
+		if (ratio < percentile_)
+		{
+			const double downgraded = min_heap_.top();
+			min_heap_.pop();
+			max_heap_.push(downgraded);
+		}
+
+		if (min_heap_.empty() || max_heap_.empty())
+		{
+			return;
+		}
+
+		T min_top = min_heap_.top();
+		T max_top = max_heap_.top();
+
+		if (min_top < max_top)
+		{
+			min_heap_.pop();
+			max_heap_.pop();
+			min_heap_.push(max_top);
+			max_heap_.push(min_top);
+		}
+	}
+
+	T get()
+	{
+		if (!min_heap_.empty())
+		{
+			return min_heap_.top();
+		}
+
+		std::cout << "Min heap is empty\n";
+		return std::numeric_limits<T>::quiet_NaN();
+	}
+
+	std::size_t size() const
+	{
+		return min_heap_.size() + max_heap_.size();
+	}
+};
+
+int main(int argc, char* argv[])
+{
+	//const double d = std::stod(argv[1]);
+	constexpr double d = 95;
+	MinMaxHeap<double> p(d / 100);
+	double n;
+
+	//size_t i = 0;
+
+	//while (std::cin >> n)
+	//{
+	//	i++;
+	//	p.insert(n);
+	//	std::cout << p.get() << '\n';
+	//}
+
+	for (int i = 0; i < 10000; i++)
+	{
+		p.insert(i);
+	}
+
+	std::cout << "Total Size: " << '\n';
+
+	std::cout << p.get() << '\n';
+	std::cout << p.size() << '\n';
+
 	return 0;
 }
+
+//int main()
+//{
+//	const std::vector<double> data = generate_sample_data<double>(30);
+//	SkipList<double> sl(3, 0.5);
+//
+//	for (int i = 0; i < data.size(); i++)
+//	{
+//		sl.insert(data[i]);
+//	}
+//
+//	sl.display_list();
+//	std::cout << "Size: " << sl.size() << '\n';
+//
+//	std::cout << "Result: " << sl.percentile_find(Scale::larger_than, .95) << '\n';*/
+//
+//	return 0;
+//}

@@ -10,6 +10,10 @@ find_package(OpenMP)
 
 include_directories(${CMAKE_SOURCE_DIR}/ScopedTimer)
 
+if (${CMAKE_BUILD_TYPE} STREQUAL "Release")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+endif()
+
 add_executable("Tiles" "main.cpp")
 
 if(OpenMP_CXX_FOUND)
