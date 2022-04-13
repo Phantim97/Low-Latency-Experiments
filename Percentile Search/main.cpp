@@ -39,7 +39,6 @@ template <typename T, typename = numeric_t<T>>
 class MinMaxHeap
 {
 private:
-	
 	std::priority_queue<T, std::vector<T>, std::greater<>> min_heap_; //All elements above percentile go here
 	std::priority_queue<T> max_heap_; //All elements below percentile go here
 	double percentile_ = 0;
@@ -67,8 +66,8 @@ public:
 			return;
 		}
 
-		T min_top = min_heap_.top();
-		T max_top = max_heap_.top();
+		const T min_top = min_heap_.top();
+		const T max_top = max_heap_.top();
 
 		if (min_top < max_top)
 		{
