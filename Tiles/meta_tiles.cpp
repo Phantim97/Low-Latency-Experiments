@@ -1,4 +1,6 @@
 #include <array>
+#include <iostream>
+
 template<int First, int Last>
 struct static_for
 {
@@ -20,9 +22,6 @@ struct static_for<N, N>
     void operator()(Fn const& fn) const
     {}
 };
-
-#include <array>
-constexpr std::array<> v = { 7,5,6,345,63,45,34,34,53,45,345,43 };
 
 template<int n, int l>
 struct Solver

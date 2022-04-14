@@ -15,6 +15,7 @@ if (${CMAKE_BUILD_TYPE} STREQUAL "Release")
 endif()
 
 add_executable("Tiles" "main.cpp")
+add_executable("Tiles-Metaprogramming" "meta_tiles.cpp")
 
 if(OpenMP_CXX_FOUND)
     target_link_libraries("Tiles" PUBLIC OpenMP::OpenMP_CXX)
