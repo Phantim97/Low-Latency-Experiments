@@ -5,7 +5,6 @@
 
 #include <iostream>
 #include <vector>
-#include <cassert>
 #include <queue>
 #include <limits>
 #include <string>
@@ -13,6 +12,7 @@
 #include "ScopedTimer.h"
 #include "numeric_types.h"
 
+//SFINAE out all non numeric types for this class
 template<typename T, typename = numeric_t<T>>
 static std::vector<T> generate_sample_data(const int sz)
 {
@@ -100,6 +100,7 @@ public:
 	}
 };
 
+//Function to simulate insertion time one by one and then finding desired value
 template <typename T>
 static void add_and_find(MinMaxHeap<T>& heap, std::vector<T>& data)
 {
@@ -142,7 +143,7 @@ int main(const int argc, char* argv[])
 		MinMaxHeap<double> heap(d / 100);
 		std::cout << "Inserting into list...\n";
 		heap_populate_and_find(heap);
-		std::cout << "Min-Heap ratio to total size: " << heap.min_heap_ratio() << '\n'; //Shows percentage stored in min heap
+		std::cout << "Min-Heap ratio to total size (Shown to validate that correct percentile was obtained): " << heap.min_heap_ratio() << '\n'; //Shows percentage stored in min heap
 	}
 	else //Vector of uniform random values
 	{
@@ -153,7 +154,7 @@ int main(const int argc, char* argv[])
 		add_and_find(heap, v);
 		std::cout << "Total Size: " << heap.size() <<'\n';
 		std::cout << "Smallest number > 95% of set: " << heap.get() << '\n';
-		std::cout << "Min-Heap ratio to total size: " << heap.min_heap_ratio() << '\n'; //Shows percentage stored in min heap
+		std::cout << "Min-Heap ratio to total size (Shown to validate that correct percentile was obtained): " << heap.min_heap_ratio() << '\n'; //Shows percentage stored in min heap
 	}
 
 	return 0;

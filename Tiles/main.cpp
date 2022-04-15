@@ -1,103 +1,179 @@
-#include <vector>
-#include <iostream>
 #include <chrono>
-#include <ctime>
-#include <cassert>
-#include <string>
+#include <iostream>
+#include <vector>
 
-// $> ./fastdesigns 7 < stripes.txt
+#include "ScopedTimer.h"
+#include <omp.h>
 
-#define LOG std::cerr << __FUNCTION__ << std::endl
-
-struct Designs
+static std::vector<int> generate_strips()
 {
-    Designs(int s);
-    void load();
-    void run();
-    void solve(int i, int level);
-    void set_compatible();
+    ScopedTimer<std::chrono::milliseconds> st;
+    std::vector<int> strips;
+
+    //We can represent the tiles as a binary 1 (start of tile and 0 rest of tile)
+
+    //masks to generate strips
+    constexpr int mask_000 = 0b111111111111111111111111111000;
+    constexpr int mask_11 = 0b000000000000000000000000000011;
+    constexpr int mask_all = 0b111111111111111111111111111111;
+    constexpr int mask_first = 0b100000000000000000000000000000;
+    constexpr int mask_last = 0b000000000000000000000000000001;
+
+    //OpenMP reduces generation time from ~2305ms to ~605ms
+	#pragma omp parallel for (shared : strips)
+    for (int i = 0; i < mask_all + 1; ++i)
+    {
+        int temp = i;
+
+        if (!(temp & mask_first)) //We need a tile in the first part for the stripe to be valid
+        {
+            continue;
+        }
+        if (temp & mask_last) //There are no tiles of size 1 so this is also an invalid region
+        {
+            continue;
+        }
+
+        int n = 0;
+        for (; n < 29; ++n)
+        {
+            if ((temp | mask_000) == mask_000) //Invalid Tile arrangement found
+            {
+                break;
+            }
+
+            if ((temp & mask_11) == mask_11) //Invalid Tile arrangement found
+            {
+                break;
+            }
+
+            temp = temp >> 1;
+        }
+
+        if (n == 29) //If we make it this far we add the strip to the group
+        {
+            strips.push_back(i);
+        }
+    }
+
+    return strips;
+}
+
+class TileLayout
+{
 private:
-    const int stripes_;
+    const int strips_ = 0;
     std::vector<int> v_;
-    std::vector<std::vector<int>> compatible_;
-    std::size_t count_ = 0;
+    std::vector<std::vector<int>> valid_;
+	std::vector<std::vector<long long>> cache_; //store subproblems in a cache
+    bool loaded_ = false;
+	long long solve(int i, int height); //long long for rapid growth of answer numerically
+    void set_valid();
+
+public:
+    explicit TileLayout(int s);
+	explicit TileLayout(int s, const std::vector<int>& vec);
+    void load(const std::vector<int>& vec);
+    void run();
 };
 
-Designs::Designs(const int s) : stripes_(s)
+TileLayout::TileLayout(const int s) : strips_(s)
 {
-    LOG;
 }
 
-void Designs::set_compatible()
+TileLayout::TileLayout(const int s, const std::vector<int>& vec) : strips_(s)
 {
-    LOG;
-    for (std::size_t i = 0; i != v_.size(); ++i)
+    this->load(vec); //If we are given vector at construction just run load
+}
+
+void TileLayout::load(const std::vector<int>& vec)
+{
+    if (!loaded_)
     {
-        std::vector<int> c;
-        for (std::size_t n = 0; n != v_.size(); ++n)
+        v_ = vec;
+        for (std::size_t i = 0; i != v_.size(); ++i)
         {
-            if ((v_[i] & v_[n]) == 0b100000000000000000000000000000)
+            //Create intermediate subproblem storage
+            cache_.emplace_back(strips_, -1);
+        }
+
+        this->set_valid();
+        loaded_ = true;
+    }
+}
+
+void TileLayout::run()
+{
+    //Benchmark the time to compute
+    ScopedTimer<std::chrono::milliseconds> st;
+
+    if (loaded_)
+    {
+        long long res = 0;
+        for (size_t i = 0; i != v_.size(); ++i)
+        {
+            res += solve(i, strips_ - 1);
+        }
+
+        std::cout << "Number of Designs: " << res << '\n';
+        std::cout << "Number of Designs: " << res << '\n';
+    }
+    else
+    {
+        std::cout << "Loading step not performed\n";
+    }
+}
+
+long long TileLayout::solve(const int i, const int height)
+{
+    if (height == 0)
+    {
+        return 1;
+    }
+
+    if (height == 1)
+    {
+        return valid_[i].size();
+    }
+
+    long long res = cache_[i][height - 1];
+
+    if (res != -1)
+    {
+        return res;
+    }
+
+    res = 0;
+
+    for (const int n : valid_[i])
+    {
+        res += solve(n, height - 1);
+    }
+
+    return res;
+}
+
+void TileLayout::set_valid()
+{
+    for (std::size_t i = 0; i != v_.size(); i++)
+    {
+        std::vector<int> temp;
+        for (std::size_t j = 0; j != v_.size(); j++)
+        {
+            if ((v_[i] & v_[j]) == 0b100000000000000000000000000000)
             {
-                c.push_back(n);
+                temp.push_back(j);
             }
         }
-        compatible_.push_back(c);
-        //std::cerr << "the stripe = " << s << " is compatible with " << c.size() << " other stripes\n";
-    }
-    LOG;
-}
 
-void Designs::load()
-{
-    int n;
-    while (std::cin >> n)
-    {
-        v_.push_back(n);
-        std::string s;
-        std::cin >> s;
-    }
-    std::cerr << "input size = " << v_.size() << "\n";
-}
-
-void Designs::solve(const int i, const int level)
-{
-    if (level == 0)
-    {
-        ++count_;
-        return;
-    }
-    for (const int n : compatible_[i])
-    {
-        solve(n, level - 1);
+        valid_.push_back(temp);
     }
 }
 
-void Designs::run()
+int main()
 {
-    LOG;
-    for (size_t i = 0; i != v_.size(); ++i)
-    {
-        solve(i, stripes_ - 1);
-    }
-    std::cerr << "design count = " << count_ << "\n";
-}
-
-int main(const int argc, char* argv[])
-{
-	const std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
-	const std::time_t start_time = std::chrono::system_clock::to_time_t(start);
-    std::cout << "start at " << std::ctime(&start_time);
-    assert(argc == 2);
-	const int stripes = std::stoi(argv[1]);
-    Designs d(stripes);
-    d.load();
-    d.set_compatible();
-    d.run();
-	const std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
-	const std::chrono::duration<double> elapsed_seconds = end - start;
-	const std::time_t end_time = std::chrono::system_clock::to_time_t(end);
-    std::cout << "start at " << std::ctime(&start_time);
-    std::cout << "end at " << std::ctime(&end_time);
-    std::cout << "elapsed " << elapsed_seconds.count() << " seconds for computing " << stripes << " stripes\n";
+    constexpr size_t num_strips = 7;
+    TileLayout t(num_strips, generate_strips());
+    t.run();
     return 0;
 }

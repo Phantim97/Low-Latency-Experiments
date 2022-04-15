@@ -14,7 +14,7 @@ find_package(OpenMP)
 
 include_directories(${CMAKE_SOURCE_DIR}/ScopedTimer)
 
-add_executable("PercentileSearch" "main.cpp""numeric_types.h")
+add_executable("PercentileSearch" "main.cpp")
 
 if(OpenMP_CXX_FOUND)
     target_link_libraries("PercentileSearch" PUBLIC OpenMP::OpenMP_CXX)
